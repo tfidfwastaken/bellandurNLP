@@ -30,4 +30,39 @@ def tokenize(texts):
 
 tokens = list(tokenize(data))
 
-print(tokens[:15])
+# Building trigram and bigram models
+bigram = gensim.models.Phrases(tokens, min_count=5, threshold=100)
+trigram = gensim.models.Phrases(bigram[tokens], threshold=100)
+
+# Phraser makes the trained model work faster because it uses only what's needed
+bigram_mod = gensim.models.phrases.Phraser(bigram)
+trigram_mod = gensim.models.phrases.Phraser(trigram)
+
+# removing stopwords
+def remove_stopwords(tokens):
+    return [[word for word in simple_preprocess(str(token)) if word not in stop_words] for token in tokens]
+
+# make bigrams and trigrams
+def make_bigrams(tokens):
+    return [bigram_mod[token] for token in tokens]
+
+def make_bigrams(tokens):
+    return [trigram_mod[bigram_mod[token]] for token in tokens]
+
+# lemmatize the tokens
+def lemmatize(tokens, pos_tags=['NOUN', 'ADJ', 'VERB', 'ADV']):
+    token_output = []
+    for token in tokens:
+        doc = nlp(" ".join(token))
+        token_output.append([token.lemma_ for token in doc if token.pos_ in pos_tags])
+    return token_output
+
+tokens_nostop = remove_stopwords(tokens)
+bigrams = make_bigrams(tokens_nostop)
+# later
+# trigrams = make_trigrams(tokens_nostop)
+nlp = spacy.load('en', disable=['ner', 'parser'])
+
+data_lemmatized = lemmatize(bigrams)
+
+print(bigrams[:1])
