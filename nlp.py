@@ -4,6 +4,7 @@ import pandas as pd
 from pprint import pprint
 
 import gensim
+import gensim.corpora as corpora
 from gensim.utils import simple_preprocess
 from gensim.models import CoherenceModel
 
@@ -65,4 +66,40 @@ nlp = spacy.load('en', disable=['ner', 'parser'])
 
 data_lemmatized = lemmatize(bigrams)
 
-print(bigrams[:1])
+# create dictionary and corpus
+dictionary = corpora.Dictionary(data_lemmatized)
+corpus = [dictionary.doc2bow(text) for text in data_lemmatized]
+
+# Build LDA model
+lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
+                                            id2word=dictionary,
+                                            num_topics=13,
+                                            random_state=100,
+                                            update_every=1,
+                                            chunksize=100,
+                                            passes=10,
+                                            alpha='auto',
+                                            per_word_topics=True)
+pprint(lda_model.print_topics())
+
+"""
+# To evaluate optimum number of topics
+def get_best_coherence(dic, corpus, limit=25, start=3, step=2):
+    cv_list = []
+    for num_top in range(start, limit, step):
+        lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
+                                                    id2word=dic,
+                                                    num_topics=num_top,
+                                                    random_state=100,
+                                                    update_every=1,
+                                                    chunksize=100,
+                                                    passes=10,
+                                                    alpha='auto',
+                                                    per_word_topics=True)
+        coherence_model = CoherenceModel(model=lda_model, texts=data_lemmatized, dictionary=dictionary, coherence='c_v')
+        score = coherence_model.get_coherence()
+        cv_list.append((num_top, score))
+    return cv_list
+optimum_model = get_best_coherence(dic=dictionary, corpus=corpus, limit=40)
+pprint(optimum_model)
+"""
